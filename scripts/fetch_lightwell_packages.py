@@ -142,6 +142,19 @@ def fetch_all(
     return collected
 
 
+def display_name(r: dict) -> str:
+    """Package name for display; npm packages with a group/scope print as `@group/name`."""
+    name = str(r.get("name", "") or "")
+    group = r.get("group")
+    if str(r.get("ecosystem", "")).lower() == "npm" and group:
+        group = str(group)
+        if not group.startswith("@"):
+            group = f"@{group}"
+        if not name.startswith(f"{group}/"):
+            name = f"{group}/{name}"
+    return name
+
+
 def print_packages_table(rows: list) -> None:
     if not rows:
         print("No packages found.")
@@ -155,7 +168,7 @@ def print_packages_table(rows: list) -> None:
             "\t".join(
                 [
                     str(r.get("ecosystem", "")),
-                    str(r.get("name", "")),
+                    display_name(r),
                     str(r.get("repository", "")),
                     vsummary,
                 ]
@@ -176,7 +189,7 @@ def print_versions_table(rows: list) -> None:
             "\t".join(
                 [
                     str(r.get("ecosystem", "")),
-                    str(r.get("name", "")),
+                    display_name(r),
                     str(r.get("version", "")),
                     str(r.get("release", "")),
                     str(r.get("repository", "")),
