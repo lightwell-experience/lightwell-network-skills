@@ -58,7 +58,7 @@ export LW_BEARER_TOKEN="<access-token>"
 python3 scripts/fetch_lightwell_packages.py packages --name jackson
 ```
 
-Both have CLI equivalents (`--offline-token`, `--token`) that override the env vars; prefer the env vars, since CLI flags land in shell history. Precedence is `--token`/`LW_BEARER_TOKEN` → `--offline-token`/`LW_OFFLINE_TOKEN` → service-account credentials.
+Both have CLI equivalents (`--offline-token`, `--token`); `--client-id` / `--client-secret` likewise select the service account. Prefer env vars, since CLI flags land in shell history. An explicit flag beats an environment variable from a lower tier: `--offline-token` wins over a leftover `LW_BEARER_TOKEN`, and `--client-id` / `--client-secret` win over both token env vars. Within flags, then within the environment, precedence is bearer token → offline token → service-account credentials.
 
 Two caveats:
 

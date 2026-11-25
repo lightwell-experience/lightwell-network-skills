@@ -9,13 +9,16 @@ Whichever identity you use must belong to a group granting the "Repositories Vie
 (no such group exists by default -- an org admin must create one and add the account), or
 the API will return 403 even with a valid token. See SKILL.md for setup.
 
-Credentials are read from the environment by default and can be overridden on the CLI.
-The first of these that is set wins:
-    LW_BEARER_TOKEN  / --token          an access token you already have (used as-is)
-    LW_OFFLINE_TOKEN / --offline-token  personal offline token, exchanged for an access
-                                        token (https://access.redhat.com/management/api)
-    LW_CLIENT_ID / LW_CLIENT_SECRET     service account (CONSOLE_CLIENT_ID /
-    --client-id  / --client-secret      CONSOLE_CLIENT_SECRET also accepted)
+Credentials are read from the environment by default. An explicit flag beats an
+environment variable from a lower tier, so --offline-token wins over a leftover
+LW_BEARER_TOKEN, and --client-id / --client-secret win over both token env vars.
+Within flags, then within the environment, the first match wins:
+    --token          / LW_BEARER_TOKEN       an access token, used as-is
+    --offline-token  / LW_OFFLINE_TOKEN      personal offline token, exchanged for an
+                                             access token
+                                             (https://access.redhat.com/management/api)
+    --client-id      / LW_CLIENT_ID          service account (CONSOLE_CLIENT_ID /
+    --client-secret  / LW_CLIENT_SECRET      CONSOLE_CLIENT_SECRET also accepted)
 
 Stdlib only -- no third-party dependencies.
 
@@ -378,13 +381,25 @@ def resolve_credentials(args) -> tuple:
 
 
 def resolve_token(args) -> str:
-    """Return a bearer token, preferring an explicit token, then offline token, then
-    service-account credentials."""
-    token = args.token or os.environ.get("LW_BEARER_TOKEN")
+    """Return a bearer token.
+
+    Explicit flags are checked before any environment variable, and within each
+    source the order is bearer token, offline token, then service-account
+    credentials. A flag therefore beats an environment variable from a lower
+    tier: --offline-token wins over LW_BEARER_TOKEN, and --client-id or
+    --client-secret wins over both token env vars.
+    """
+    if args.token:
+        return args.token
+    if args.offline_token:
+        return get_token_from_offline_token(args.offline_token)
+    if args.client_id or args.client_secret:
+        return get_bearer_token(*resolve_credentials(args))
+
+    token = os.environ.get("LW_BEARER_TOKEN")
     if token:
         return token
-
-    offline_token = args.offline_token or os.environ.get("LW_OFFLINE_TOKEN")
+    offline_token = os.environ.get("LW_OFFLINE_TOKEN")
     if offline_token:
         return get_token_from_offline_token(offline_token)
 
@@ -400,18 +415,26 @@ def main() -> None:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument(
         "--token",
-        help="Bearer token to use as-is, e.g. your own user token (overrides env "
-        "LW_BEARER_TOKEN and every other credential).",
+        help="Bearer token to use as-is, e.g. your own user token (overrides every "
+        "other credential, including env LW_BEARER_TOKEN).",
     )
     common.add_argument(
         "--offline-token",
         dest="offline_token",
         help="Personal offline token from https://access.redhat.com/management/api, "
-        "exchanged for a user-scoped bearer token (overrides env LW_OFFLINE_TOKEN).",
+        "exchanged for a user-scoped bearer token. Beats env LW_OFFLINE_TOKEN, "
+        "LW_BEARER_TOKEN, and service-account environment variables.",
     )
-    common.add_argument("--client-id", help="Service-account client ID (overrides env).")
     common.add_argument(
-        "--client-secret", help="Service-account client secret (overrides env)."
+        "--client-id",
+        help="Service-account client ID (overrides env LW_CLIENT_ID). An explicit "
+        "--client-id or --client-secret beats LW_BEARER_TOKEN and LW_OFFLINE_TOKEN.",
+    )
+    common.add_argument(
+        "--client-secret",
+        help="Service-account client secret (overrides env LW_CLIENT_SECRET). An "
+        "explicit --client-id or --client-secret beats LW_BEARER_TOKEN and "
+        "LW_OFFLINE_TOKEN.",
     )
     common.add_argument("--json", action="store_true", help="Emit raw JSON instead of a table.")
     common.add_argument(
