@@ -1,7 +1,6 @@
 """Offline checks for scripts/fetch_lightwell_packages.py.
 
-No test in this module opens a network connection. Token exchange is stubbed,
-and the missing-credentials path asserts urllib is never called.
+Authentication tests stub the exchange helpers or the HTTP transport.
 """
 
 from __future__ import annotations
@@ -14,9 +13,11 @@ import subprocess
 import sys
 import unittest
 from contextlib import contextmanager
+from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
+from urllib.parse import parse_qs
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "fetch_lightwell_packages.py"
@@ -214,6 +215,72 @@ class FetchScriptTest(unittest.TestCase):
             ),
             "sa:console-id:console-secret",
         )
+
+    def test_packages_uses_access_token_exchanged_from_explicit_credentials(self):
+        cases = (
+            (
+                ["--offline-token", "flag-offline"],
+                {
+                    "grant_type": ["refresh_token"],
+                    "client_id": ["rhsm-api"],
+                    "refresh_token": ["flag-offline"],
+                },
+            ),
+            (
+                ["--client-id", "flag-id", "--client-secret", "flag-secret"],
+                {
+                    "grant_type": ["client_credentials"],
+                    "client_id": ["flag-id"],
+                    "client_secret": ["flag-secret"],
+                },
+            ),
+        )
+        for flags, expected_grant in cases:
+            with self.subTest(flag=flags[0]):
+                responses = [
+                    BytesIO(b'{"access_token": "fresh-access-token"}'),
+                    BytesIO(b'{"data": []}'),
+                ]
+                with (
+                    credential_env(LW_BEARER_TOKEN="stale", LW_OFFLINE_TOKEN="env-offline"),
+                    patch.object(sys, "argv", [str(SCRIPT), "packages", "--json", *flags]),
+                    patch.object(fetch.urllib.request, "urlopen", side_effect=responses) as urlopen,
+                    patch("builtins.print") as output,
+                ):
+                    fetch.main()
+
+                self.assertEqual(urlopen.call_count, 2)
+                exchange, packages = (call.args[0] for call in urlopen.call_args_list)
+                self.assertEqual(exchange.full_url, fetch.SSO_TOKEN_URL)
+                self.assertEqual(exchange.get_method(), "POST")
+                self.assertEqual(parse_qs(exchange.data.decode()), expected_grant)
+                self.assertEqual(packages.full_url.split("?")[0], f"{fetch.API_BASE}/packages")
+                self.assertEqual(packages.get_header("Authorization"), "Bearer fresh-access-token")
+                output.assert_called_once_with("[]")
+
+    def test_packages_uses_explicit_bearer_token_without_exchange(self):
+        with (
+            credential_env(
+                LW_BEARER_TOKEN="env-bearer",
+                LW_OFFLINE_TOKEN="env-offline",
+                LW_CLIENT_ID="env-id",
+                LW_CLIENT_SECRET="env-secret",
+            ),
+            patch.object(
+                sys, "argv", [str(SCRIPT), "packages", "--json", "--token", "flag-bearer"]
+            ),
+            patch.object(
+                fetch.urllib.request, "urlopen", side_effect=[BytesIO(b'{"data": []}')]
+            ) as urlopen,
+            patch("builtins.print") as output,
+        ):
+            fetch.main()
+
+        urlopen.assert_called_once()
+        packages = urlopen.call_args.args[0]
+        self.assertEqual(packages.full_url.split("?")[0], f"{fetch.API_BASE}/packages")
+        self.assertEqual(packages.get_header("Authorization"), "Bearer flag-bearer")
+        output.assert_called_once_with("[]")
 
     def test_partial_client_flag_does_not_fall_through_to_bearer_env(self):
         with credential_env(LW_BEARER_TOKEN="env-bearer"):
