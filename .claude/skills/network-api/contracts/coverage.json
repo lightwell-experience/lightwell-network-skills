@@ -1,0 +1,550 @@
+{
+  "components": {
+    "schemas": {
+      "api.CoverageReportPackageCollectionResponse": {
+        "properties": {
+          "data": {
+            "description": "List of packages",
+            "items": {
+              "$ref": "#/components/schemas/api.CoverageReportPackageResponse"
+            },
+            "type": "array"
+          },
+          "links": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/api.Links"
+              }
+            ],
+            "description": "Navigation links"
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/api.ResponseMetadata"
+              }
+            ],
+            "description": "Pagination metadata"
+          }
+        },
+        "type": "object"
+      },
+      "api.CoverageReportPackageResponse": {
+        "properties": {
+          "covered": {
+            "description": "Whether the package is covered (true = exact or partial match)",
+            "type": "boolean"
+          },
+          "cve_count": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/api.CveCount"
+              }
+            ],
+            "description": "Count of CVEs fixed in remediated repos for this package, by severity"
+          },
+          "cve_range": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/api.CveRange"
+              }
+            ],
+            "description": "Min/max CVSS severity score across this package's CVEs; omitted when the package has no CVEs"
+          },
+          "ecosystem": {
+            "description": "Ecosystem of the package",
+            "type": "string"
+          },
+          "match_status": {
+            "description": "Match status of the package (exact, partial, none)",
+            "type": "string"
+          },
+          "name": {
+            "description": "Package name from the manifest",
+            "type": "string"
+          },
+          "version": {
+            "description": "Package version from the manifest",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "api.CoverageReportResponse": {
+        "properties": {
+          "analysis_task_error": {
+            "description": "Error if coverage analysis task failed",
+            "type": "string"
+          },
+          "analysis_task_uuid": {
+            "description": "UUID of the coverage analysis task",
+            "type": "string"
+          },
+          "completed_at": {
+            "description": "Timestamp when coverage analysis finished",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Timestamp when the report was created",
+            "type": "string"
+          },
+          "cve_summary": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/api.CveCount"
+              }
+            ],
+            "description": "Count of CVEs fixed in remediated repos across covered packages, by severity"
+          },
+          "ecosystem_coverage_summary": {
+            "description": "Per-ecosystem breakdown",
+            "items": {
+              "$ref": "#/components/schemas/api.EcosystemCoverageSummary"
+            },
+            "type": "array"
+          },
+          "exact_matches": {
+            "description": "Number of packages with name and version found",
+            "type": "integer"
+          },
+          "input_format": {
+            "description": "Detected manifest format",
+            "type": "string"
+          },
+          "partial_matches": {
+            "description": "Number of packages with name found but not version",
+            "type": "integer"
+          },
+          "skipped_entries": {
+            "description": "Package entries skipped because no usable identity could be extracted; absent for older reports",
+            "type": "integer"
+          },
+          "status": {
+            "description": "Coverage analysis task status",
+            "type": "string"
+          },
+          "total": {
+            "description": "Total packages parsed from the manifest",
+            "type": "integer"
+          },
+          "unmatched": {
+            "description": "Number of packages with name not found",
+            "type": "integer"
+          },
+          "uuid": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "api.CveCount": {
+        "properties": {
+          "critical": {
+            "type": "integer"
+          },
+          "important": {
+            "type": "integer"
+          },
+          "low": {
+            "type": "integer"
+          },
+          "moderate": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "api.CveRange": {
+        "properties": {
+          "high": {
+            "description": "Highest CVSS severity score among the package's CVEs",
+            "type": "number"
+          },
+          "low": {
+            "description": "Lowest CVSS severity score among the package's CVEs",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "api.EcosystemCoverageSummary": {
+        "properties": {
+          "ecosystem": {
+            "type": "string"
+          },
+          "exact_matches": {
+            "type": "integer"
+          },
+          "partial_matches": {
+            "type": "integer"
+          },
+          "supported": {
+            "description": "Whether the ecosystem is present in the Lightwell catalog.",
+            "type": "boolean"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "unmatched": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "api.Links": {
+        "properties": {
+          "first": {
+            "description": "Path to first page of results",
+            "type": "string"
+          },
+          "last": {
+            "description": "Path to last page of results",
+            "type": "string"
+          },
+          "next": {
+            "description": "Path to next page of results",
+            "type": "string"
+          },
+          "prev": {
+            "description": "Path to previous page of results",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "api.ResponseMetadata": {
+        "properties": {
+          "count": {
+            "description": "Total count of results",
+            "type": "integer"
+          },
+          "limit": {
+            "description": "Limit of results used for the request",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Offset into results used for the request",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "errors.ErrorResponse": {
+        "properties": {
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/errors.HandlerError"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "errors.HandlerError": {
+        "properties": {
+          "detail": {
+            "description": "An explanation specific to the problem",
+            "type": "string"
+          },
+          "status": {
+            "description": "HTTP status code applicable to the error",
+            "type": "integer"
+          },
+          "title": {
+            "description": "A summary of the problem",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "RhIdentity": {
+        "in": "header",
+        "name": "x-rh-identity",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "contact": {},
+    "description": "The API for the repositories of the content sources that you can use to create and manage repositories between third-party applications and the [Red Hat Hybrid Cloud Console](https://console.redhat.com). With these repositories, you can build and deploy images using Image Builder for Cloud, on-Premise, and Edge. You can handle tasks, search for required RPMs, fetch a GPGKey from the URL, and list the features within applications.\n",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "title": "ContentSourcesBackend",
+    "version": "v1.0.0"
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/coverage_reports/": {
+      "post": {
+        "description": "Upload a manifest file and start coverage analysis.",
+        "operationId": "createCoverageReport",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "catalog_source": {
+                    "description": "Catalog source for analysis: pulp (default) or db",
+                    "type": "string",
+                    "x-formData-name": "catalog_source"
+                  },
+                  "file": {
+                    "description": "Manifest file (CycloneDX, SPDX, etc.)",
+                    "format": "binary",
+                    "type": "string",
+                    "x-formData-name": "file"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.CoverageReportResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Create coverage report",
+        "tags": [
+          "coverage_reports"
+        ]
+      }
+    },
+    "/coverage_reports/{uuid}": {
+      "get": {
+        "description": "Return a coverage report by UUID.",
+        "operationId": "getCoverageReport",
+        "parameters": [
+          {
+            "description": "Coverage report UUID",
+            "in": "path",
+            "name": "uuid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.CoverageReportResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Get coverage report",
+        "tags": [
+          "coverage_reports"
+        ]
+      }
+    },
+    "/coverage_reports/{uuid}/packages": {
+      "get": {
+        "description": "Return paginated packages for a completed coverage report.",
+        "operationId": "listCoverageReportPackages",
+        "parameters": [
+          {
+            "description": "Coverage report UUID",
+            "in": "path",
+            "name": "uuid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by package name",
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "A comma separated list of ecosystems to filter on",
+            "in": "query",
+            "name": "ecosystem",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "A comma separated list of match statuses to filter on (exact, partial, none)",
+            "in": "query",
+            "name": "match_status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Starting point for pagination. Default: 0",
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of items per page. Default: 100, maximum: 1000",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api.CoverageReportPackageCollectionResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "List coverage report packages",
+        "tags": [
+          "coverage_reports"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://console.redhat.com/api/content-sources/v1.0/"
+    }
+  ]
+}

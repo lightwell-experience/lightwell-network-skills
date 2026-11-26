@@ -1,0 +1,26 @@
+name: Network API compatibility
+
+on:
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache: false
+      - name: Install OpenAPI comparison tool
+        run: go install github.com/oasdiff/oasdiff@v1.41.0
+      - name: Check covered API operations for breaking changes
+        run: |
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          python3 scripts/check_network_api.py
