@@ -103,3 +103,18 @@ you commit.
 - [ ] Added the skill to the table in [`SKILLS.md`](SKILLS.md).
 - [ ] No secrets committed.
 - [ ] You tested that the skill actually accomplishes its task.
+
+## Network API compatibility
+
+The Network API compatibility workflow runs Mondays at 06:23 UTC and can
+also run manually from GitHub Actions. It fetches the public OpenAPI specs
+for Lightwell and Content Sources, compares the covered operations with the
+baselines in `.claude/skills/network-api/contracts/`, and fails on
+error-level breaking changes reported by oasdiff. The workflow reads the
+specs without making calls to the operations described in them.
+
+Update the baselines in the same change as any corresponding skill or CLI
+updates. Each baseline's path and method entries define its coverage. Keep
+the schemas referenced by those operations in the baseline. The Lightwell
+spec currently omits `POST /clearinghouse/submissions/create/csv`, so
+compatibility for that command cannot be checked from OpenAPI.
